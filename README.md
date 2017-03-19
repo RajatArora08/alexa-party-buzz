@@ -1,4 +1,4 @@
-PartyBuzz is an Alexa skill developed to search parties buzzing around. The skill can list parties, describe them, and (potentially) buy tickets for it. The users can ask the number of tickets that the want to buy and the total bill is generated accordingly. The bill is also sent as Card to the users Alexa account. 
+PartyBuzz is an Alexa skill developed to search parties buzzing around. The skill can list parties, describe them, and (potentially) buy tickets for it. The users can ask the number of tickets that they want to buy and the total bill is generated accordingly. The bill is also sent as Card to the users Alexa account. 
 
 
 Instructions:
