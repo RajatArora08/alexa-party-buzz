@@ -2,6 +2,7 @@ package com.alexa.partyhouse;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,33 +21,33 @@ import com.amazon.speech.ui.PlainTextOutputSpeech;
 import com.amazon.speech.ui.Reprompt;
 import com.amazon.speech.ui.SimpleCard;
 import com.amazon.speech.ui.SsmlOutputSpeech;
+import com.google.gson.Gson;
+
+import edu.sfhacks.alexa.eventbriteapi.Data;
+import edu.sfhacks.alexa.eventbriteapi.Event;
+import edu.sfhacks.alexa.eventbriteapi.EventbriteAPI;
 
 
 public class PartyHouseSpeechlet implements Speechlet{
 
 	private static final Logger log = LoggerFactory.getLogger(PartyHouseSpeechlet.class);
 
-	private ArrayList<String> event_list = new ArrayList<>();
+	private List<Event> event_list = new ArrayList<>();
 
 	private static int SESSION_EVENT_INDEX = 0;
 
-	public PartyHouseSpeechlet() {
-
-//		event_list.add(new Events(1, "Event one"));
-//		event_list.add(new Events(2, "Event two"));
-//		event_list.add(new Events(3, "Event three"));
-		
-		
-		event_list.add("Event one");
-		event_list.add("Event two");
-		event_list.add("Event three");
-	}
 
 	@Override
 	public SpeechletResponse onLaunch(final LaunchRequest request, final Session session) throws SpeechletException {
 
 		log.info("onLaunch requestId={}, sessionId={}", request.getRequestId(),
 				session.getSessionId());
+		
+		Gson gson = new Gson();
+		EventbriteAPI api = new EventbriteAPI();
+		api = gson.fromJson(new Data().data, EventbriteAPI.class);
+		
+		event_list = api.getEvents();
 
 		String speechOutput = "Welcome to party house. You can ask where is the party ?";
 
@@ -119,8 +120,10 @@ public class PartyHouseSpeechlet implements Speechlet{
 			return SpeechletResponse.newTellResponse(speech, card); 
 		}
 		
+		Event event = event_list.get(session_index++);
 		
-		String speechOutput = event_list.get(session_index++);
+		
+		String speechOutput = event.getName().getText().toString();
 		
 		session.setAttribute("SESSION_EVENT_INDEX", session_index);
 
