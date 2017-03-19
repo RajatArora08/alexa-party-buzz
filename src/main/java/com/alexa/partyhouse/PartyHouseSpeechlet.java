@@ -1,7 +1,10 @@
 package com.alexa.partyhouse;
 
 import java.lang.reflect.Array;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -34,7 +37,7 @@ public class PartyHouseSpeechlet implements Speechlet{
 
 	private List<Event> event_list = new ArrayList<>();
 
-	private static int SESSION_EVENT_INDEX = 0;
+	private static int SESSION_EVENT_INDEX = -1;
 
 
 	@Override
@@ -48,14 +51,16 @@ public class PartyHouseSpeechlet implements Speechlet{
 		api = gson.fromJson(new Data().data, EventbriteAPI.class);
 		
 		event_list = api.getEvents();
+		
+		log.info("List size= "+event_list.size());
 
-		String speechOutput = "Welcome to party house. You can ask where is the party ?";
+		String speechOutput = "Welcome to party buzz! You can ask what's happening around ?";
 
 		// Reprompt speech will be triggered if the user doesn't respond.
-		String repromptText = "You can ask, where is the party";
+		String repromptText = "Ask me for parties happening around";
 
 		SimpleCard card = new SimpleCard();
-		card.setTitle("Party House");
+		card.setTitle("Party Buzz");
 		card.setContent(speechOutput);
 
 		session.setAttribute("SESSION_EVENT_INDEX", SESSION_EVENT_INDEX);
@@ -90,9 +95,15 @@ public class PartyHouseSpeechlet implements Speechlet{
 		String intentName = (intent != null) ? intent.getName() : null;
 
 		if ("GetEventsIntent".equals(intentName)) {
-			return getIntentResponse(session);
+			return getIntentResponse(session, false);
 		} else if("NextEventIntent".equals(intentName)) {
-			return getIntentResponse(session);
+			return getIntentResponse(session, false);
+		} else if("PreviousEventIntent".equals(intentName)) {
+			return getIntentResponse(session, true);
+		}  else if("DetailsEventIntent".equals(intentName)) {
+			return getDetailsIntentResponse(session);
+		} else if("BookEventIntent".equals(intentName)) {
+			return getBookIntentResponse(session);
 		}
 		
 		else if ("AMAZON.HelpIntent".equals(intentName)) {
@@ -104,15 +115,60 @@ public class PartyHouseSpeechlet implements Speechlet{
 	}
 
 
-	public SpeechletResponse getIntentResponse(Session session) {
+	private SpeechletResponse getBookIntentResponse(Session session) {
+		// TODO Auto-generated method stub
+		
+		SimpleCard card = new SimpleCard();
+		card.setContent("Event booked");
+		card.setTitle("Party Buzz");
+		
+		PlainTextOutputSpeech speech = new PlainTextOutputSpeech();
+        speech.setText("Yay! I got tickets for you. Enjoy the party!");
+		
+		return SpeechletResponse.newTellResponse(speech, card); 
+		
+	}
+
+	private SpeechletResponse getDetailsIntentResponse(Session session) {
+		// TODO Auto-generated method stub
+		
+		String repromptText = "Please respond";
+		
+		Event event = event_list.get((int) session.getAttribute("SESSION_EVENT_INDEX"));
+		
+//		SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss");
+		
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+		
+		Date d = new Date();
+		try {
+			d = sdf.parse(event.getStart().getLocal());
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		String date = "<say-as interpret-as=\"date\" format=\"dm\">" + (new SimpleDateFormat("dd-MM").format(d)) + "</say-as>";
+	
+		String speechOutput = "<speak>This event is on" + date + "</speak>";
+		
+		log.info("***** "+speechOutput);
+		
+		return newAskResponse(speechOutput, true, repromptText, false);
+	}
+
+	public SpeechletResponse getIntentResponse(Session session, Boolean control) {
 		
 		int session_index = (int) session.getAttribute("SESSION_EVENT_INDEX");
 		
-		if(session_index >= event_list.size()){
+		if (control) session_index--;
+		else session_index++;
+	
+		if(session_index >= event_list.size() || session_index <0){
 			
 			SimpleCard card = new SimpleCard();
 			card.setContent("Event list finished");
-			card.setTitle("Party House");
+			card.setTitle("Party Buzz");
 			
 			PlainTextOutputSpeech speech = new PlainTextOutputSpeech();
 	        speech.setText("Event list finished");
@@ -120,24 +176,23 @@ public class PartyHouseSpeechlet implements Speechlet{
 			return SpeechletResponse.newTellResponse(speech, card); 
 		}
 		
-		Event event = event_list.get(session_index++);
+		Event event = new Event();
 		
+		event = event_list.get(session_index);
 		
 		String speechOutput = event.getName().getText().toString();
 		
 		session.setAttribute("SESSION_EVENT_INDEX", session_index);
+		
 
 		// Reprompt speech will be triggered if the user doesn't respond.
 		String repromptText = "You can say next for next event";
 
 		SimpleCard card = new SimpleCard();
-		card.setTitle("Party House");
+		card.setTitle("Party Buzz");
 		card.setContent(speechOutput);
-
-		
 		
 		return newAskResponse(speechOutput, false, repromptText, false);
-
 	}
 	
 
