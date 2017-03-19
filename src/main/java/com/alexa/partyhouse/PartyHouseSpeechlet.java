@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,9 @@ import edu.sfhacks.alexa.eventbriteapi.EventbriteAPI;
 public class PartyHouseSpeechlet implements Speechlet{
 
 	private static final Logger log = LoggerFactory.getLogger(PartyHouseSpeechlet.class);
-
+	
+	private static final String SLOT_TICKETS_COUNT = "TicketsCount";
+	
 	private List<Event> event_list = new ArrayList<>();
 
 	private static int SESSION_EVENT_INDEX = -1;
@@ -103,7 +106,7 @@ public class PartyHouseSpeechlet implements Speechlet{
 		}  else if("DetailsEventIntent".equals(intentName)) {
 			return getDetailsIntentResponse(session);
 		} else if("BookEventIntent".equals(intentName)) {
-			return getBookIntentResponse(session);
+			return getBookIntentResponse(request.getIntent(), session);
 		}
 		
 		else if ("AMAZON.HelpIntent".equals(intentName)) {
@@ -115,15 +118,18 @@ public class PartyHouseSpeechlet implements Speechlet{
 	}
 
 
-	private SpeechletResponse getBookIntentResponse(Session session) {
+	private SpeechletResponse getBookIntentResponse(Intent intent, Session session) {
 		// TODO Auto-generated method stub
+		int value = (int) session.getAttribute("PRICE");
+		
+		int noOfTickets = Integer.parseInt(intent.getSlot(SLOT_TICKETS_COUNT).getValue());
 		
 		SimpleCard card = new SimpleCard();
-		card.setContent("Event booked");
+		card.setContent("Event booked. Total Bill: "+ value*noOfTickets +" USD");
 		card.setTitle("Party Buzz");
 		
 		PlainTextOutputSpeech speech = new PlainTextOutputSpeech();
-        speech.setText("Yay! I got tickets for you. Enjoy the party!");
+        speech.setText("Awesome! I bought the tickets for you. Total bill is "+ value*noOfTickets +" USD. Enjoy the party!");
 		
 		return SpeechletResponse.newTellResponse(speech, card); 
 		
@@ -148,9 +154,14 @@ public class PartyHouseSpeechlet implements Speechlet{
 			e.printStackTrace();
 		}
 		
+		Random rand = new Random(); 
+		int value = rand.nextInt(50); 
+		
 		String date = "<say-as interpret-as=\"date\" format=\"dm\">" + (new SimpleDateFormat("dd-MM").format(d)) + "</say-as>";
 	
-		String speechOutput = "<speak>This event is on" + date + "</speak>";
+		String speechOutput = "<speak>This event is on" + date + " and the cost is "+ value +" USD </speak>";
+		
+		session.setAttribute("PRICE", value);
 		
 		log.info("***** "+speechOutput);
 		
